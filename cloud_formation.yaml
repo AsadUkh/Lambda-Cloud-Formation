@@ -1,0 +1,95 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Lambda function with cfn-response.
+Parameters: 
+  InstanceName: 
+    Default: testing-123
+    Description: Instance name 
+    Type: String
+  Region: 
+    Default: eu-west-1
+    Description: region only 1 region supported 
+    Type: String
+  StopScheduled: 
+    Default: cron(* 0/1 * * ? *)
+    Description: enter an Schedule expression example cron(0 18 ? * MON-FRI *)
+    Type: String
+Resources:
+  StopEC2Instances:
+    Type: AWS::Lambda::Function
+    Properties:
+      Runtime: python3.8
+      Role: !GetAtt Role.Arn
+      Handler: index.lambda_handler
+      Timeout: 60
+      Environment:
+         Variables:
+          instances: !Ref InstanceName
+          Region: !Ref Region
+      Code:
+        ZipFile: |
+          import json
+          import re
+          import os
+          import boto3
+          
+          def lambda_handler(event, context):
+            instance_name_to_terminaite = os.environ['InstanceName']
+            region = os.environ['Region']
+            ec2 = boto3.resource('ec2',region_name=region)
+            ec2_client = boto3.client('ec2')
+            instances = ec2.instances.filter(Filters=[{'Name': 'instance-state-name', 'Values': ['running']} , {'Name':'tag:Name', 'Values':[instance_name_to_terminaite]}])
+            instance_ids = []
+            for instance in instances:
+               instance_ids.append(instance.id)
+
+            ec2_client.terminate_instances(InstanceIds=instance_ids)
+            
+            return {
+              'statusCode': 200,
+              'body': json.dumps('terminate your instances: ' + str(instances))
+            }
+      Description: Function that stops instances
+  permissionForEventsToInvokeStopEC2Instances:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt StopEC2Instances.Arn
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      "SourceArn" : !GetAtt StopScheduledRule.Arn
+  Role:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+              - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+      Policies:
+        - PolicyName: Ec2permissions
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                - "ec2:DescribeInstances"
+                - "ec2:TerminateInstances"
+                - "ec2:StartInstances"
+                - "ec2:StopInstances"
+                Resource: '*'              
+  StopScheduledRule: 
+    Type: AWS::Events::Rule
+    Properties: 
+      Description: "ScheduledRule"
+      ScheduleExpression: !Ref StopScheduled
+      State: "ENABLED"
+      Targets: 
+        - 
+          Arn: !GetAtt StopEC2Instances.Arn
+          Id: "TargetFunctionV1"
