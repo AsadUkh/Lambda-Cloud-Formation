@@ -2,7 +2,7 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: Lambda function with cfn-response.
 Parameters: 
   InstanceName: 
-    Default: testing-123
+    Default: poc
     Description: Instance name 
     Type: String
   Region: 
@@ -10,7 +10,7 @@ Parameters:
     Description: region only 1 region supported 
     Type: String
   StopScheduled: 
-    Default: cron(* 0/1 * * ? *)
+    Default: cron(0 0/1 * * ? *)
     Description: enter an Schedule expression example cron(0 18 ? * MON-FRI *)
     Type: String
 Resources:
@@ -23,7 +23,7 @@ Resources:
       Timeout: 60
       Environment:
          Variables:
-          instances: !Ref InstanceName
+          InstanceName : !Ref InstanceName
           Region: !Ref Region
       Code:
         ZipFile: |
