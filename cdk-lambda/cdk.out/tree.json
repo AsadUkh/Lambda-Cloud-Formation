@@ -1,0 +1,204 @@
+{
+  "version": "tree-0.1",
+  "tree": {
+    "id": "App",
+    "path": "",
+    "children": {
+      "Tree": {
+        "id": "Tree",
+        "path": "Tree",
+        "constructInfo": {
+          "fqn": "@aws-cdk/core.Construct",
+          "version": "1.133.0"
+        }
+      },
+      "Lambda-Test-AppSync": {
+        "id": "Lambda-Test-AppSync",
+        "path": "Lambda-Test-AppSync",
+        "children": {
+          "renew-api-key-expiration": {
+            "id": "renew-api-key-expiration",
+            "path": "Lambda-Test-AppSync/renew-api-key-expiration",
+            "children": {
+              "ServiceRole": {
+                "id": "ServiceRole",
+                "path": "Lambda-Test-AppSync/renew-api-key-expiration/ServiceRole",
+                "children": {
+                  "Resource": {
+                    "id": "Resource",
+                    "path": "Lambda-Test-AppSync/renew-api-key-expiration/ServiceRole/Resource",
+                    "attributes": {
+                      "aws:cdk:cloudformation:type": "AWS::IAM::Role",
+                      "aws:cdk:cloudformation:props": {
+                        "assumeRolePolicyDocument": {
+                          "Statement": [
+                            {
+                              "Action": "sts:AssumeRole",
+                              "Effect": "Allow",
+                              "Principal": {
+                                "Service": "lambda.amazonaws.com"
+                              }
+                            }
+                          ],
+                          "Version": "2012-10-17"
+                        },
+                        "managedPolicyArns": [
+                          {
+                            "Fn::Join": [
+                              "",
+                              [
+                                "arn:",
+                                {
+                                  "Ref": "AWS::Partition"
+                                },
+                                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+                              ]
+                            ]
+                          }
+                        ]
+                      }
+                    },
+                    "constructInfo": {
+                      "fqn": "@aws-cdk/aws-iam.CfnRole",
+                      "version": "1.133.0"
+                    }
+                  }
+                },
+                "constructInfo": {
+                  "fqn": "@aws-cdk/aws-iam.Role",
+                  "version": "1.133.0"
+                }
+              },
+              "Resource": {
+                "id": "Resource",
+                "path": "Lambda-Test-AppSync/renew-api-key-expiration/Resource",
+                "attributes": {
+                  "aws:cdk:cloudformation:type": "AWS::Lambda::Function",
+                  "aws:cdk:cloudformation:props": {
+                    "code": {
+                      "zipFile": "import boto3\nfrom datetime import datetime , timedelta\nimport json\nimport logging\n\n\ndef lambda_handler(event, context):\n    \n\n    client = boto3.client('appsync')\n\n    response = client.list_api_keys(\n    apiId='rwromyhnzrdezogkyi5gyayqy4',\n   # nextToken='da2-p2skjlyw7rbo3gdmtzenzpnuwm',\n    maxResults=25\n    )\n\n    print (\"Below are the keys/key for api id\")\n    for key in response['apiKeys']:  \n            print(key)\n    future_expiration_date = datetime.now() + timedelta(days = 365)\n    print(\"Future Expiration date \",future_expiration_date)\n    future_expiration_date_epoc=future_expiration_date.timestamp()\n    print (\"Afterting conversion it in epoch formatc \", future_expiration_date.timestamp())\n\n    for key in response['apiKeys']:  \n        print (\"iterating over number of keys\")\n        print (\"Current value of expiration in Epoch format\" ,key['expires'])\n        print (\"Current value of expiration in TimeStamp GMT format\" ,datetime.fromtimestamp(key['expires']))\n        dt_object = datetime.fromtimestamp(key['expires'])\n        diff = dt_object -datetime.now()\n        print (\"Key will be Expired in \", diff ,\" day , if it is less than the specified value then i will update\")\n        if(diff.days < 5):\n            print(\"updating expiration date ............\")\n            response = client.update_api_key(\n            apiId='rwromyhnzrdezogkyi5gyayqy4',\n            id=key['id'],\n            description='my-updated-description',\n            expires=int(future_expiration_date_epoc)\n            )\n        \n\n    \n\n\n# dt_object = datetime.fromtimestamp(1638115200)\n\n# print (datetime.now())\n# print (dt_object)\n# print  \n\n# diff= (dt_object -datetime.now())\n\n\n"
+                    },
+                    "role": {
+                      "Fn::GetAtt": [
+                        "renewapikeyexpirationServiceRoleC326ACA7",
+                        "Arn"
+                      ]
+                    },
+                    "handler": "index.main",
+                    "runtime": "python3.7",
+                    "timeout": 900
+                  }
+                },
+                "constructInfo": {
+                  "fqn": "@aws-cdk/aws-lambda.CfnFunction",
+                  "version": "1.133.0"
+                }
+              }
+            },
+            "constructInfo": {
+              "fqn": "@aws-cdk/aws-lambda.Function",
+              "version": "1.133.0"
+            }
+          },
+          "Rule": {
+            "id": "Rule",
+            "path": "Lambda-Test-AppSync/Rule",
+            "children": {
+              "Resource": {
+                "id": "Resource",
+                "path": "Lambda-Test-AppSync/Rule/Resource",
+                "attributes": {
+                  "aws:cdk:cloudformation:type": "AWS::Events::Rule",
+                  "aws:cdk:cloudformation:props": {
+                    "scheduleExpression": "rate(1 day)",
+                    "state": "ENABLED",
+                    "targets": [
+                      {
+                        "id": "Target0",
+                        "arn": {
+                          "Fn::GetAtt": [
+                            "renewapikeyexpirationA49748C0",
+                            "Arn"
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                },
+                "constructInfo": {
+                  "fqn": "@aws-cdk/aws-events.CfnRule",
+                  "version": "1.133.0"
+                }
+              },
+              "AllowEventRuleLambdaTestAppSyncrenewapikeyexpiration51D01A57": {
+                "id": "AllowEventRuleLambdaTestAppSyncrenewapikeyexpiration51D01A57",
+                "path": "Lambda-Test-AppSync/Rule/AllowEventRuleLambdaTestAppSyncrenewapikeyexpiration51D01A57",
+                "attributes": {
+                  "aws:cdk:cloudformation:type": "AWS::Lambda::Permission",
+                  "aws:cdk:cloudformation:props": {
+                    "action": "lambda:InvokeFunction",
+                    "functionName": {
+                      "Fn::GetAtt": [
+                        "renewapikeyexpirationA49748C0",
+                        "Arn"
+                      ]
+                    },
+                    "principal": "events.amazonaws.com",
+                    "sourceArn": {
+                      "Fn::GetAtt": [
+                        "Rule4C995B7F",
+                        "Arn"
+                      ]
+                    }
+                  }
+                },
+                "constructInfo": {
+                  "fqn": "@aws-cdk/aws-lambda.CfnPermission",
+                  "version": "1.133.0"
+                }
+              }
+            },
+            "constructInfo": {
+              "fqn": "@aws-cdk/aws-events.Rule",
+              "version": "1.133.0"
+            }
+          },
+          "CDKMetadata": {
+            "id": "CDKMetadata",
+            "path": "Lambda-Test-AppSync/CDKMetadata",
+            "children": {
+              "Default": {
+                "id": "Default",
+                "path": "Lambda-Test-AppSync/CDKMetadata/Default",
+                "constructInfo": {
+                  "fqn": "@aws-cdk/core.CfnResource",
+                  "version": "1.133.0"
+                }
+              },
+              "Condition": {
+                "id": "Condition",
+                "path": "Lambda-Test-AppSync/CDKMetadata/Condition",
+                "constructInfo": {
+                  "fqn": "@aws-cdk/core.CfnCondition",
+                  "version": "1.133.0"
+                }
+              }
+            },
+            "constructInfo": {
+              "fqn": "@aws-cdk/core.Construct",
+              "version": "1.133.0"
+            }
+          }
+        },
+        "constructInfo": {
+          "fqn": "@aws-cdk/core.Stack",
+          "version": "1.133.0"
+        }
+      }
+    },
+    "constructInfo": {
+      "fqn": "@aws-cdk/core.App",
+      "version": "1.133.0"
+    }
+  }
+}

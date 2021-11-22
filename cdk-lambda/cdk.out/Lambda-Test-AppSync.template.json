@@ -1,0 +1,308 @@
+{
+  "Resources": {
+    "renewapikeyexpirationServiceRoleC326ACA7": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition"
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+              ]
+            ]
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "Lambda-Test-AppSync/renew-api-key-expiration/ServiceRole/Resource"
+      }
+    },
+    "renewapikeyexpirationA49748C0": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "ZipFile": "import boto3\nfrom datetime import datetime , timedelta\nimport json\nimport logging\n\n\ndef lambda_handler(event, context):\n    \n\n    client = boto3.client('appsync')\n\n    response = client.list_api_keys(\n    apiId='rwromyhnzrdezogkyi5gyayqy4',\n   # nextToken='da2-p2skjlyw7rbo3gdmtzenzpnuwm',\n    maxResults=25\n    )\n\n    print (\"Below are the keys/key for api id\")\n    for key in response['apiKeys']:  \n            print(key)\n    future_expiration_date = datetime.now() + timedelta(days = 365)\n    print(\"Future Expiration date \",future_expiration_date)\n    future_expiration_date_epoc=future_expiration_date.timestamp()\n    print (\"Afterting conversion it in epoch formatc \", future_expiration_date.timestamp())\n\n    for key in response['apiKeys']:  \n        print (\"iterating over number of keys\")\n        print (\"Current value of expiration in Epoch format\" ,key['expires'])\n        print (\"Current value of expiration in TimeStamp GMT format\" ,datetime.fromtimestamp(key['expires']))\n        dt_object = datetime.fromtimestamp(key['expires'])\n        diff = dt_object -datetime.now()\n        print (\"Key will be Expired in \", diff ,\" day , if it is less than the specified value then i will update\")\n        if(diff.days < 5):\n            print(\"updating expiration date ............\")\n            response = client.update_api_key(\n            apiId='rwromyhnzrdezogkyi5gyayqy4',\n            id=key['id'],\n            description='my-updated-description',\n            expires=int(future_expiration_date_epoc)\n            )\n        \n\n    \n\n\n# dt_object = datetime.fromtimestamp(1638115200)\n\n# print (datetime.now())\n# print (dt_object)\n# print  \n\n# diff= (dt_object -datetime.now())\n\n\n"
+        },
+        "Role": {
+          "Fn::GetAtt": [
+            "renewapikeyexpirationServiceRoleC326ACA7",
+            "Arn"
+          ]
+        },
+        "Handler": "index.main",
+        "Runtime": "python3.7",
+        "Timeout": 900
+      },
+      "DependsOn": [
+        "renewapikeyexpirationServiceRoleC326ACA7"
+      ],
+      "Metadata": {
+        "aws:cdk:path": "Lambda-Test-AppSync/renew-api-key-expiration/Resource"
+      }
+    },
+    "Rule4C995B7F": {
+      "Type": "AWS::Events::Rule",
+      "Properties": {
+        "ScheduleExpression": "rate(1 day)",
+        "State": "ENABLED",
+        "Targets": [
+          {
+            "Arn": {
+              "Fn::GetAtt": [
+                "renewapikeyexpirationA49748C0",
+                "Arn"
+              ]
+            },
+            "Id": "Target0"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "Lambda-Test-AppSync/Rule/Resource"
+      }
+    },
+    "RuleAllowEventRuleLambdaTestAppSyncrenewapikeyexpiration51D01A57DCBB37E2": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "renewapikeyexpirationA49748C0",
+            "Arn"
+          ]
+        },
+        "Principal": "events.amazonaws.com",
+        "SourceArn": {
+          "Fn::GetAtt": [
+            "Rule4C995B7F",
+            "Arn"
+          ]
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "Lambda-Test-AppSync/Rule/AllowEventRuleLambdaTestAppSyncrenewapikeyexpiration51D01A57"
+      }
+    },
+    "CDKMetadata": {
+      "Type": "AWS::CDK::Metadata",
+      "Properties": {
+        "Analytics": "v2:deflate64:H4sIAAAAAAAA/02MQQrCMBBFz9J9OrV0Ie6EguvSniCmEcc2E8hMFAm5u0114ep93p8/LbRdB4fqrF9cm3lpkvHBQppEm0X1nlhCNKL6G42WfQzGlrwVMwp6yqoM06rdddaQLpFM0eXmPw82OGTeB6gdpNGv+6PCrOzTkvBm489uzDmr4S13T00HRzhVD0asQyRBZ2H88gPXLM9TvwAAAA=="
+      },
+      "Metadata": {
+        "aws:cdk:path": "Lambda-Test-AppSync/CDKMetadata/Default"
+      },
+      "Condition": "CDKMetadataAvailable"
+    }
+  },
+  "Conditions": {
+    "CDKMetadataAvailable": {
+      "Fn::Or": [
+        {
+          "Fn::Or": [
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "af-south-1"
+              ]
+            },
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "ap-east-1"
+              ]
+            },
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "ap-northeast-1"
+              ]
+            },
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "ap-northeast-2"
+              ]
+            },
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "ap-south-1"
+              ]
+            },
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "ap-southeast-1"
+              ]
+            },
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "ap-southeast-2"
+              ]
+            },
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "ca-central-1"
+              ]
+            },
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "cn-north-1"
+              ]
+            },
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "cn-northwest-1"
+              ]
+            }
+          ]
+        },
+        {
+          "Fn::Or": [
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "eu-central-1"
+              ]
+            },
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "eu-north-1"
+              ]
+            },
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "eu-south-1"
+              ]
+            },
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "eu-west-1"
+              ]
+            },
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "eu-west-2"
+              ]
+            },
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "eu-west-3"
+              ]
+            },
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "me-south-1"
+              ]
+            },
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "sa-east-1"
+              ]
+            },
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "us-east-1"
+              ]
+            },
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "us-east-2"
+              ]
+            }
+          ]
+        },
+        {
+          "Fn::Or": [
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "us-west-1"
+              ]
+            },
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "AWS::Region"
+                },
+                "us-west-2"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
