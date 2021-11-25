@@ -62,6 +62,48 @@
                       "fqn": "@aws-cdk/aws-iam.CfnRole",
                       "version": "1.133.0"
                     }
+                  },
+                  "DefaultPolicy": {
+                    "id": "DefaultPolicy",
+                    "path": "Lambda-Test-AppSync/renew-api-key-expiration/ServiceRole/DefaultPolicy",
+                    "children": {
+                      "Resource": {
+                        "id": "Resource",
+                        "path": "Lambda-Test-AppSync/renew-api-key-expiration/ServiceRole/DefaultPolicy/Resource",
+                        "attributes": {
+                          "aws:cdk:cloudformation:type": "AWS::IAM::Policy",
+                          "aws:cdk:cloudformation:props": {
+                            "policyDocument": {
+                              "Statement": [
+                                {
+                                  "Action": [
+                                    "appsync:ListApiKeys",
+                                    "appsync:UpdateApiKey"
+                                  ],
+                                  "Effect": "Allow",
+                                  "Resource": "*"
+                                }
+                              ],
+                              "Version": "2012-10-17"
+                            },
+                            "policyName": "renewapikeyexpirationServiceRoleDefaultPolicy15958DD9",
+                            "roles": [
+                              {
+                                "Ref": "renewapikeyexpirationServiceRoleC326ACA7"
+                              }
+                            ]
+                          }
+                        },
+                        "constructInfo": {
+                          "fqn": "@aws-cdk/aws-iam.CfnPolicy",
+                          "version": "1.133.0"
+                        }
+                      }
+                    },
+                    "constructInfo": {
+                      "fqn": "@aws-cdk/aws-iam.Policy",
+                      "version": "1.133.0"
+                    }
                   }
                 },
                 "constructInfo": {
@@ -76,7 +118,7 @@
                   "aws:cdk:cloudformation:type": "AWS::Lambda::Function",
                   "aws:cdk:cloudformation:props": {
                     "code": {
-                      "zipFile": "import boto3\nfrom datetime import datetime , timedelta\nimport json\nimport logging\n\n\ndef lambda_handler(event, context):\n    \n\n    client = boto3.client('appsync')\n\n    response = client.list_api_keys(\n    apiId='rwromyhnzrdezogkyi5gyayqy4',\n   # nextToken='da2-p2skjlyw7rbo3gdmtzenzpnuwm',\n    maxResults=25\n    )\n\n    print (\"Below are the keys/key for api id\")\n    for key in response['apiKeys']:  \n            print(key)\n    future_expiration_date = datetime.now() + timedelta(days = 365)\n    print(\"Future Expiration date \",future_expiration_date)\n    future_expiration_date_epoc=future_expiration_date.timestamp()\n    print (\"Afterting conversion it in epoch formatc \", future_expiration_date.timestamp())\n\n    for key in response['apiKeys']:  \n        print (\"iterating over number of keys\")\n        print (\"Current value of expiration in Epoch format\" ,key['expires'])\n        print (\"Current value of expiration in TimeStamp GMT format\" ,datetime.fromtimestamp(key['expires']))\n        dt_object = datetime.fromtimestamp(key['expires'])\n        diff = dt_object -datetime.now()\n        print (\"Key will be Expired in \", diff ,\" day , if it is less than the specified value then i will update\")\n        if(diff.days < 5):\n            print(\"updating expiration date ............\")\n            response = client.update_api_key(\n            apiId='rwromyhnzrdezogkyi5gyayqy4',\n            id=key['id'],\n            description='my-updated-description',\n            expires=int(future_expiration_date_epoc)\n            )\n        \n\n    \n\n\n# dt_object = datetime.fromtimestamp(1638115200)\n\n# print (datetime.now())\n# print (dt_object)\n# print  \n\n# diff= (dt_object -datetime.now())\n\n\n"
+                      "zipFile": "import boto3\nfrom datetime import datetime , timedelta\nimport json\nimport logging\n\n\ndef main(event, context):\n    \n\n    client = boto3.client('appsync')\n\n    response = client.list_api_keys(\n    apiId='rwromyhnzrdezogkyi5gyayqy4',\n   # nextToken='da2-p2skjlyw7rbo3gdmtzenzpnuwm',\n    maxResults=25\n    )\n\n    print (\"Below are the keys/key for api id\")\n    for key in response['apiKeys']:  \n            print(key)\n    future_expiration_date = datetime.now() + timedelta(days = 365)\n    print(\"Future Expiration date \",future_expiration_date)\n    future_expiration_date_epoc=future_expiration_date.timestamp()\n    print (\"Afterting conversion it in epoch formatc \", future_expiration_date.timestamp())\n\n    for key in response['apiKeys']:  \n        print (\"iterating over number of keys\")\n        print (\"Current value of expiration in Epoch format\" ,key['expires'])\n        print (\"Current value of expiration in TimeStamp GMT format\" ,datetime.fromtimestamp(key['expires']))\n        dt_object = datetime.fromtimestamp(key['expires'])\n        diff = dt_object -datetime.now()\n        print (\"Key will be Expired in \", diff ,\" day , if it is less than the specified value then i will update\")\n        if(diff.days < 5):\n            print(\"updating expiration date ............\")\n            response = client.update_api_key(\n            apiId='rwromyhnzrdezogkyi5gyayqy4',\n            id=key['id'],\n            description='my-updated-description',\n            expires=int(future_expiration_date_epoc)\n            )\n        \n\n    \n\n\n# dt_object = datetime.fromtimestamp(1638115200)\n\n# print (datetime.now())\n# print (dt_object)\n# print  \n\n# diff= (dt_object -datetime.now())\n\n\n"
                     },
                     "role": {
                       "Fn::GetAtt": [

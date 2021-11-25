@@ -2,6 +2,7 @@ from aws_cdk import (
     aws_events as events,
     aws_lambda as lambda_,
     aws_events_targets as targets,
+    aws_iam as iam,
     core,
 )
 
@@ -21,6 +22,13 @@ class LambdaCronStack(core.Stack):
             runtime=lambda_.Runtime.PYTHON_3_7,
         )
 
+        lambdaFn.add_to_role_policy(
+            iam.PolicyStatement(
+                effect=iam.Effect.ALLOW,
+                actions=['appsync:ListApiKeys','appsync:UpdateApiKey'],
+                resources=['*'],
+                ))
+        
         rule = events.Rule(
             self, "Rule",
             schedule=events.Schedule.rate(core.Duration.days(1)),
